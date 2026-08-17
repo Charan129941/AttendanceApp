@@ -1,0 +1,59 @@
+name: iOS Simulator Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    name: Build iOS Simulator App
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Link iOS Native Modules
+        run: |
+          cd ios
+          gem install xcodeproj
+          ruby link_native_modules.rb
+
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          pod install
+
+      - name: Build iOS App (Simulator)
+        run: |
+          cd ios
+          xcodebuild \
+            -workspace AttendanceApp.xcworkspace \
+            -scheme AttendanceApp \
+            -sdk iphonesimulator \
+            -configuration Release \
+            -derivedDataPath build \
+            build
+
+      - name: Zip the .app for Simulator
+        run: |
+          cd ios/build/Build/Products/Release-iphonesimulator
+          zip -r AttendanceApp-Simulator.zip AttendanceApp.app
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: AttendanceApp-iOS-Simulator
+          path: ios/build/Build/Products/Release-iphonesimulator/AttendanceApp-Simulator.zip
