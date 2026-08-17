@@ -71,7 +71,7 @@ class BLEBroadcasterModule: RCTEventEmitter, CBPeripheralManagerDelegate, CBCent
         resolve(nil)
     }
 
-    @objc func stopBroadcasting(_ resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
+    @objc func stopBroadcasting(_ resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
         if isAdvertising {
             peripheralManager.stopAdvertising()
             isAdvertising = false
@@ -81,7 +81,7 @@ class BLEBroadcasterModule: RCTEventEmitter, CBPeripheralManagerDelegate, CBCent
 
     // MARK: - Scanning
     
-    @objc func startScanning(_ resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
+    @objc func startScanning(_ resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
         if isScanning {
             reject("ERR_ALREADY_SCANNING", "BLE scanning is already active", nil)
             return
@@ -97,7 +97,7 @@ class BLEBroadcasterModule: RCTEventEmitter, CBPeripheralManagerDelegate, CBCent
         resolve(nil)
     }
 
-    @objc func stopScanning(_ resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
+    @objc func stopScanning(_ resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
         if isScanning {
             centralManager.stopScan()
             isScanning = false
@@ -112,19 +112,39 @@ class BLEBroadcasterModule: RCTEventEmitter, CBPeripheralManagerDelegate, CBCent
     }
 
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
+        
+        // Helper function for safe, unaligned data reading
+        func parseUInt64(_ data: Data) -> UInt64 {
+            var value: UInt64 = 0
+            _ = withUnsafeMutableBytes(of: &value) { data.copyBytes(to: $0) }
+            return UInt64(bigEndian: value)
+        }
+        
+        func parseUInt32(_ data: Data) -> UInt32 {
+            var value: UInt32 = 0
+            _ = withUnsafeMutableBytes(of: &value) { data.copyBytes(to: $0) }
+            return UInt32(bigEndian: value)
+        }
+        
+        func parseUInt16(_ data: Data) -> UInt16 {
+            var value: UInt16 = 0
+            _ = withUnsafeMutableBytes(of: &value) { data.copyBytes(to: $0) }
+            return value // CompanyID is typically little endian, handled as-is
+        }
+
         // 1. Android broadcasts using Manufacturer Data (0xFFFF)
         if let manufacturerData = advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data {
             if manufacturerData.count >= 14 {
                 let companyIdBytes = manufacturerData.subdata(in: 0..<2)
-                let companyId = companyIdBytes.withUnsafeBytes { $0.loadUnaligned(as: UInt16.self) }
+                let companyId = parseUInt16(companyIdBytes)
                 
                 if companyId == COMPANY_ID { // 0xFFFF
                     let payload = manufacturerData.subdata(in: 2..<14)
                     let studentIdData = payload.subdata(in: 0..<8)
                     let pinData = payload.subdata(in: 8..<12)
                     
-                    let studentIdLong = UInt64(bigEndian: studentIdData.withUnsafeBytes { $0.loadUnaligned(as: UInt64.self) })
-                    let pinInt = UInt32(bigEndian: pinData.withUnsafeBytes { $0.loadUnaligned(as: UInt32.self) })
+                    let studentIdLong = parseUInt64(studentIdData)
+                    let pinInt = parseUInt32(pinData)
                     
                     let result: [String: Any] = [
                         "studentId": String(studentIdLong),
@@ -147,8 +167,8 @@ class BLEBroadcasterModule: RCTEventEmitter, CBPeripheralManagerDelegate, CBCent
                         let studentIdData = uuidData.subdata(in: 4..<12)
                         let pinData = uuidData.subdata(in: 12..<16)
                         
-                        let studentIdLong = UInt64(bigEndian: studentIdData.withUnsafeBytes { $0.loadUnaligned(as: UInt64.self) })
-                        let pinInt = UInt32(bigEndian: pinData.withUnsafeBytes { $0.loadUnaligned(as: UInt32.self) })
+                        let studentIdLong = parseUInt64(studentIdData)
+                        let pinInt = parseUInt32(pinData)
                         
                         let result: [String: Any] = [
                             "studentId": String(studentIdLong),
