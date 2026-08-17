@@ -40,3 +40,11 @@ end
 
 project.save
 puts "Successfully updated project.pbxproj"
+
+# Set bridging header
+target.build_configurations.each do |config|
+  config.build_settings['SWIFT_OBJC_BRIDGING_HEADER'] = 'AttendanceApp/AttendanceApp-Bridging-Header.h'
+end
+
+project.save
+puts "Successfully set Bridging Header"

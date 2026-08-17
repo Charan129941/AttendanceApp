@@ -24,7 +24,7 @@ class BLEBroadcasterModule: RCTEventEmitter, CBPeripheralManagerDelegate, CBCent
         return true
     }
 
-    override func supportedEvents() -> [String]! {
+    override func supportedEvents() -> [String] {
         return ["onAttendanceReceived"]
     }
 
@@ -116,15 +116,15 @@ class BLEBroadcasterModule: RCTEventEmitter, CBPeripheralManagerDelegate, CBCent
         if let manufacturerData = advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data {
             if manufacturerData.count >= 14 {
                 let companyIdBytes = manufacturerData.subdata(in: 0..<2)
-                let companyId = companyIdBytes.withUnsafeBytes { $0.load(as: UInt16.self) }
+                let companyId = companyIdBytes.withUnsafeBytes { $0.loadUnaligned(as: UInt16.self) }
                 
                 if companyId == COMPANY_ID { // 0xFFFF
                     let payload = manufacturerData.subdata(in: 2..<14)
                     let studentIdData = payload.subdata(in: 0..<8)
                     let pinData = payload.subdata(in: 8..<12)
                     
-                    let studentIdLong = UInt64(bigEndian: studentIdData.withUnsafeBytes { $0.load(as: UInt64.self) })
-                    let pinInt = UInt32(bigEndian: pinData.withUnsafeBytes { $0.load(as: UInt32.self) })
+                    let studentIdLong = UInt64(bigEndian: studentIdData.withUnsafeBytes { $0.loadUnaligned(as: UInt64.self) })
+                    let pinInt = UInt32(bigEndian: pinData.withUnsafeBytes { $0.loadUnaligned(as: UInt32.self) })
                     
                     let result: [String: Any] = [
                         "studentId": String(studentIdLong),
@@ -147,8 +147,8 @@ class BLEBroadcasterModule: RCTEventEmitter, CBPeripheralManagerDelegate, CBCent
                         let studentIdData = uuidData.subdata(in: 4..<12)
                         let pinData = uuidData.subdata(in: 12..<16)
                         
-                        let studentIdLong = UInt64(bigEndian: studentIdData.withUnsafeBytes { $0.load(as: UInt64.self) })
-                        let pinInt = UInt32(bigEndian: pinData.withUnsafeBytes { $0.load(as: UInt32.self) })
+                        let studentIdLong = UInt64(bigEndian: studentIdData.withUnsafeBytes { $0.loadUnaligned(as: UInt64.self) })
+                        let pinInt = UInt32(bigEndian: pinData.withUnsafeBytes { $0.loadUnaligned(as: UInt32.self) })
                         
                         let result: [String: Any] = [
                             "studentId": String(studentIdLong),
