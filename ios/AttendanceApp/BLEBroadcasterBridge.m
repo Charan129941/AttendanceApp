@@ -4,11 +4,12 @@
 @interface RCT_EXTERN_MODULE(BLEBroadcasterModule, RCTEventEmitter)
 
 RCT_EXTERN_METHOD(startBroadcasting:(NSString *)studentId
-                  hmac:(NSString *)hmac
-                  timestamp:(nonnull NSNumber *)timestamp)
-RCT_EXTERN_METHOD(stopBroadcasting)
-RCT_EXTERN_METHOD(startScanning)
-RCT_EXTERN_METHOD(stopScanning)
+                  pin:(NSString *)pin
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(stopBroadcasting:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(startScanning:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(stopScanning:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
 
 + (BOOL)requiresMainQueueSetup
 {
