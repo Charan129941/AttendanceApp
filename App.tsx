@@ -14,6 +14,7 @@ export default function App() {
   const [studentStatus, setStudentStatus] = useState('Ready to mark attendance.');
   const [studentId, setStudentId] = useState('');
   const [studentPin, setStudentPin] = useState('');
+  const [hasAttempted, setHasAttempted] = useState(false);
 
   useEffect(() => {
     async function requestPermissions() {
@@ -90,6 +91,10 @@ export default function App() {
   };
 
   const startStudentSession = () => {
+    if (hasAttempted) {
+      Alert.alert("Notice", "only one chance to attempt the attendance");
+      return;
+    }
     if (!studentId || studentId.trim() === '') {
       Alert.alert("Required", "Please enter your Enrollment Number.");
       return;
@@ -106,7 +111,10 @@ export default function App() {
     setStudentStatus("Broadcasting attendance...");
     
     BLEBroadcaster.startBroadcasting(studentId, studentPin)
-      .then(() => setStudentStatus('Broadcasting attendance successfully! You can close the app.'))
+      .then(() => {
+        setStudentStatus('Broadcasting attendance successfully! You can close the app.');
+        setHasAttempted(true);
+      })
       .catch(e => {
         console.error("BLE Error", e);
         setStudentStatus(`Error: ${e.message}`);
