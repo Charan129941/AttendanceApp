@@ -426,8 +426,13 @@ class BLEBroadcasterModule(reactContext: ReactApplicationContext) :
             return
         }
 
-        // Add RSSI to the event
+        // Add RSSI and device address to the event
         decoded.putInt("rssi", result.rssi)
+        try {
+            decoded.putString("deviceAddress", result.device.address)
+        } catch (e: SecurityException) {
+            decoded.putString("deviceAddress", "unknown")
+        }
 
         reactApplicationContext
             .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)

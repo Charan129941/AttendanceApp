@@ -178,12 +178,14 @@ class BLEBroadcasterModule: RCTEventEmitter, CBPeripheralManagerDelegate, CBCent
     }
 
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
+        let deviceAddress = peripheral.identifier.uuidString
+        
         // Try to read from manufacturer data (Android devices)
         if let manufacturerData = advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data {
             // Manufacturer data includes the company ID (2 bytes) + payload
             if manufacturerData.count >= 2 + PAYLOAD_SIZE {
                 let payload = manufacturerData.subdata(in: 2..<(2 + PAYLOAD_SIZE))
-                processPayload(payload, rssi: RSSI.intValue)
+                processPayload(payload, rssi: RSSI.intValue, deviceAddress: deviceAddress)
                 return
             }
         }
@@ -194,14 +196,14 @@ class BLEBroadcasterModule: RCTEventEmitter, CBPeripheralManagerDelegate, CBCent
                 let uuidData = uuid.data
                 if uuidData.count >= PAYLOAD_SIZE {
                     let payload = uuidData.prefix(PAYLOAD_SIZE)
-                    processPayload(Data(payload), rssi: RSSI.intValue)
+                    processPayload(Data(payload), rssi: RSSI.intValue, deviceAddress: deviceAddress)
                     return
                 }
             }
         }
     }
 
-    private func processPayload(_ payload: Data, rssi: Int) {
+    private func processPayload(_ payload: Data, rssi: Int, deviceAddress: String) {
         guard payload.count >= PAYLOAD_SIZE else { return }
         
         // Extract student ID (first 4 bytes, big-endian)
@@ -235,7 +237,8 @@ class BLEBroadcasterModule: RCTEventEmitter, CBPeripheralManagerDelegate, CBCent
             "studentId": studentIdStr,
             "hmac": String(format: "%08x", hmac),
             "timestamp": timestamp,
-            "rssi": rssi
+            "rssi": rssi,
+            "deviceAddress": deviceAddress
         ])
     }
 }

@@ -9,6 +9,10 @@ export default function App() {
   const [collectedStudents, setCollectedStudents] = useState<any[]>([]);
   const [isClassActive, setIsClassActive] = useState(false);
   const [facultyPin, setFacultyPin] = useState('');
+  const [proxyAlerts, setProxyAlerts] = useState<string[]>([]);
+  
+  // Anti-proxy: track which device address submitted which student ID
+  const [deviceToStudent, setDeviceToStudent] = useState<{[key: string]: string}>({});
   
   // Student State
   const [studentStatus, setStudentStatus] = useState('Ready to mark attendance.');
@@ -40,10 +44,29 @@ export default function App() {
   useEffect(() => {
     const bleSub = bleEmitter.addListener('onAttendanceReceived', (event) => {
       if (mode === 'FACULTY') {
-        const { studentId: receivedId, pin: receivedPin, rssi } = event;
+        const { studentId: receivedId, pin: receivedPin, rssi, deviceAddress } = event;
         
         // ONLY accept if the PIN matches what's on the board
         if (receivedPin === facultyPin) {
+          // Anti-proxy check: has this device already submitted for a DIFFERENT student?
+          if (deviceAddress && deviceAddress !== 'unknown') {
+            setDeviceToStudent(prev => {
+              const existingStudent = prev[deviceAddress];
+              if (existingStudent && existingStudent !== receivedId) {
+                // PROXY DETECTED! Same device, different student ID
+                const msg = `⚠️ Proxy detected! Device tried to submit for ${receivedId} but already submitted for ${existingStudent}`;
+                setProxyAlerts(alerts => [...alerts, msg]);
+                Alert.alert(
+                  '🚫 Proxy Attendance Detected!',
+                  `The same device already marked attendance for enrollment ${existingStudent}. This attempt for enrollment ${receivedId} has been REJECTED.`
+                );
+                return prev; // Don't update mapping
+              }
+              // First time this device is seen, or same student — record it
+              return { ...prev, [deviceAddress]: receivedId };
+            });
+          }
+
           setCollectedStudents(prev => {
             if (prev.find(s => s.studentId === receivedId)) return prev;
             return [...prev, { studentId: receivedId, rssi }];
@@ -63,6 +86,8 @@ export default function App() {
     setFacultyPin(newPin);
     setIsClassActive(true);
     setCollectedStudents([]);
+    setDeviceToStudent({});
+    setProxyAlerts([]);
     BLEBroadcaster.startScanning();
   };
 
@@ -159,6 +184,14 @@ export default function App() {
         </View>
 
         <ScrollView style={styles.listContainer}>
+          {proxyAlerts.length > 0 && (
+            <View style={{backgroundColor: '#ffebee', padding: 10, borderRadius: 8, marginBottom: 10}}>
+              <Text style={{color: '#c62828', fontWeight: 'bold', marginBottom: 4}}>🚫 Proxy Attempts:</Text>
+              {proxyAlerts.map((msg, i) => (
+                <Text key={i} style={{color: '#c62828', fontSize: 12, marginBottom: 2}}>{msg}</Text>
+              ))}
+            </View>
+          )}
           {collectedStudents.map((s, i) => (
             <View key={i} style={styles.listItem}>
               <Text style={styles.listText}>Enrollment: {s.studentId}</Text>
