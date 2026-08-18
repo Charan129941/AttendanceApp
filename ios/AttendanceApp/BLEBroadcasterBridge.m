@@ -11,9 +11,4 @@ RCT_EXTERN_METHOD(stopBroadcasting:(RCTPromiseResolveBlock)resolve rejecter:(RCT
 RCT_EXTERN_METHOD(startScanning:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
 RCT_EXTERN_METHOD(stopScanning:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
 
-+ (BOOL)requiresMainQueueSetup
-{
-  return NO;
-}
-
 @end
