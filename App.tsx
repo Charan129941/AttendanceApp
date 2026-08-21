@@ -371,7 +371,7 @@ export default function App() {
             <Text style={s.inputLabel}>Enrollment Number</Text>
             <TextInput
               style={s.inputField}
-              placeholder="e.g. 92400118347"
+              placeholder="e.g. 924*0118***"
               placeholderTextColor={C.midGray}
               keyboardType="number-pad"
               value={studentId}
