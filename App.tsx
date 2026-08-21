@@ -23,13 +23,13 @@ const C = {
   midGray:    '#64748b',
   dark:       '#0f172a',
   red:        '#ef4444',
-  redBg:      '#fef2f2',
+  redBg:      '#2d1a1a',
   green:      '#22c55e',
-  greenBg:    '#f0fdf4',
+  greenBg:    '#143a24',
   greenBorder:'#86efac',
   border:     '#334155',
-  inputBg:    '#f8fafc',
-  inputBorder:'#e2e8f0',
+  inputBg:    '#1e293b',
+  inputBorder:'#334155',
   shadow:     '#000000',
 };
 
@@ -353,25 +353,17 @@ export default function App() {
     const isError = studentStatus.startsWith("Error");
 
     return (
-      <SafeAreaView style={s.rootLight}>
-        <StatusBar barStyle="dark-content" backgroundColor={C.offWhite} />
-        <Animated.View style={[s.screenLight, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+      <SafeAreaView style={s.root}>
+        <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+        <Animated.View style={[s.screen, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
 
           {/* Header */}
-          <View style={s.topBarLight}>
-            <TouchableOpacity onPress={goBack} style={s.backBtnLight}>
-              <Text style={s.backIconLight}>←</Text>
+          <View style={s.topBar}>
+            <TouchableOpacity onPress={goBack} style={s.backBtn}>
+              <Text style={s.backIcon}>←</Text>
             </TouchableOpacity>
-            <Text style={s.topTitleLight}>Mark Attendance</Text>
+            <Text style={s.topTitle}>Mark Attendance</Text>
             <View style={{ width: 44 }} />
-          </View>
-
-          {/* Illustration area */}
-          <View style={s.studentHero}>
-            <View style={s.studentIconCircle}>
-              <Text style={{ fontSize: 40 }}>🎓</Text>
-            </View>
-            <Text style={s.studentHeroTitle}>Enter your details below</Text>
           </View>
 
           {/* Inputs */}
@@ -380,7 +372,7 @@ export default function App() {
             <TextInput
               style={s.inputField}
               placeholder="e.g. 92400118347"
-              placeholderTextColor={C.lightGray}
+              placeholderTextColor={C.midGray}
               keyboardType="number-pad"
               value={studentId}
               onChangeText={setStudentId}
@@ -393,7 +385,7 @@ export default function App() {
             <TextInput
               style={s.inputField}
               placeholder="e.g. 1234"
-              placeholderTextColor={C.lightGray}
+              placeholderTextColor={C.midGray}
               keyboardType="number-pad"
               maxLength={4}
               value={studentPin}
@@ -411,8 +403,8 @@ export default function App() {
           ]}>
             <Text style={[
               s.statusText,
-              isSuccess && { color: C.tealDark },
-              isError && { color: C.red },
+              isSuccess && { color: '#86efac' },
+              isError && { color: '#fca5a5' },
             ]}>
               {isSuccess ? '✅ ' : isError ? '❌ ' : isBroadcasting ? '📡 ' : '📋 '}
               {studentStatus}
@@ -449,10 +441,7 @@ export default function App() {
 
         {/* Logo area */}
         <View style={s.logoArea}>
-          <View style={s.logoCircle}>
-            <Text style={s.logoIcon}>📶</Text>
-          </View>
-          <Text style={s.appName}>BLE Attendance</Text>
+          <Text style={s.appName}>Attendance Secure System</Text>
           <Text style={s.appTagline}>Offline  •  Secure  •  Instant</Text>
         </View>
 
@@ -463,7 +452,6 @@ export default function App() {
             onPress={() => { fadeAnim.setValue(0); slideAnim.setValue(30); setMode('FACULTY'); }}
             activeOpacity={0.85}
           >
-            <Text style={s.roleBtnIcon}>👨‍🏫</Text>
             <View>
               <Text style={s.roleBtnTitle}>Faculty</Text>
               <Text style={s.roleBtnSub}>Start class & collect attendance</Text>
@@ -475,7 +463,6 @@ export default function App() {
             onPress={() => { fadeAnim.setValue(0); slideAnim.setValue(30); setMode('STUDENT'); }}
             activeOpacity={0.85}
           >
-            <Text style={s.roleBtnIcon}>🎓</Text>
             <View>
               <Text style={s.roleBtnTitle}>Student</Text>
               <Text style={s.roleBtnSub}>Mark your attendance via BLE</Text>
@@ -483,7 +470,6 @@ export default function App() {
           </TouchableOpacity>
         </View>
 
-        <Text style={s.footerText}>No internet required. Uses Bluetooth Low Energy.</Text>
       </Animated.View>
     </SafeAreaView>
   );
@@ -495,22 +481,14 @@ export default function App() {
 const s = StyleSheet.create({
   // ── Roots ─────────────────────────────────────────────────────
   root:      { flex: 1, backgroundColor: C.bg },
-  rootLight: { flex: 1, backgroundColor: C.offWhite },
   screen:      { flex: 1, padding: 20 },
-  screenLight: { flex: 1, padding: 20 },
   homeScreen:  { flex: 1, padding: 24, justifyContent: 'center' },
 
   // ── Top Bar (dark) ────────────────────────────────────────────
-  topBar:    { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  topBar:    { flexDirection: 'row', alignItems: 'center', marginBottom: 20, marginTop: 40 },
   backBtn:   { width: 44, height: 44, borderRadius: 22, backgroundColor: C.bgCard, alignItems: 'center', justifyContent: 'center' },
   backIcon:  { color: C.white, fontSize: 22, fontWeight: '600' },
   topTitle:  { flex: 1, textAlign: 'center', fontSize: 20, fontWeight: '700', color: C.white, letterSpacing: 0.3 },
-
-  // ── Top Bar (light) ───────────────────────────────────────────
-  topBarLight:    { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-  backBtnLight:   { width: 44, height: 44, borderRadius: 22, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center', elevation: 2, shadowColor: C.shadow, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4 },
-  backIconLight:  { color: C.dark, fontSize: 22, fontWeight: '600' },
-  topTitleLight:  { flex: 1, textAlign: 'center', fontSize: 20, fontWeight: '700', color: C.dark, letterSpacing: 0.3 },
 
   // ── PIN Card ──────────────────────────────────────────────────
   pinCard:       { backgroundColor: C.teal, borderRadius: 20, padding: 24, alignItems: 'center', marginBottom: 16, elevation: 8, shadowColor: C.teal, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 12 },
@@ -557,35 +535,26 @@ const s = StyleSheet.create({
   emptyText:  { fontSize: 16, color: C.lightGray, fontWeight: '600' },
   emptyHint:  { fontSize: 13, color: C.midGray, marginTop: 4, textAlign: 'center' },
 
-  // ── Student Hero ──────────────────────────────────────────────
-  studentHero:       { alignItems: 'center', marginBottom: 28 },
-  studentIconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#e0f2fe', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  studentHeroTitle:  { fontSize: 16, color: C.midGray, fontWeight: '500' },
-
   // ── Inputs ────────────────────────────────────────────────────
   inputGroup: { marginBottom: 18 },
-  inputLabel: { fontSize: 14, fontWeight: '600', color: C.dark, marginBottom: 8, letterSpacing: 0.2 },
-  inputField: { backgroundColor: C.white, borderRadius: 14, borderWidth: 1.5, borderColor: C.inputBorder, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: C.dark, elevation: 1, shadowColor: C.shadow, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 3 },
+  inputLabel: { fontSize: 14, fontWeight: '600', color: C.lightGray, marginBottom: 8, letterSpacing: 0.2 },
+  inputField: { backgroundColor: C.inputBg, borderRadius: 14, borderWidth: 1.5, borderColor: C.inputBorder, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: C.white, elevation: 1 },
 
   // ── Status Box ────────────────────────────────────────────────
   statusBox:          { borderRadius: 12, padding: 14, marginBottom: 12, backgroundColor: C.inputBg, borderWidth: 1, borderColor: C.inputBorder },
-  statusSuccess:      { backgroundColor: C.greenBg, borderColor: C.greenBorder },
-  statusError:        { backgroundColor: C.redBg, borderColor: '#fca5a5' },
-  statusBroadcasting: { backgroundColor: '#eff6ff', borderColor: '#93c5fd' },
-  statusText:         { fontSize: 14, color: C.midGray, textAlign: 'center', lineHeight: 20 },
+  statusSuccess:      { backgroundColor: C.greenBg, borderColor: C.green },
+  statusError:        { backgroundColor: C.redBg, borderColor: C.red },
+  statusBroadcasting: { backgroundColor: '#1e3a8a', borderColor: '#3b82f6' },
+  statusText:         { fontSize: 14, color: C.lightGray, textAlign: 'center', lineHeight: 20 },
   oneChanceNote:      { textAlign: 'center', fontSize: 12, color: C.midGray, marginTop: 10 },
 
   // ── Home / Role Selection ─────────────────────────────────────
   logoArea:    { alignItems: 'center', marginBottom: 48 },
-  logoCircle:  { width: 100, height: 100, borderRadius: 50, backgroundColor: 'rgba(20,184,166,0.15)', alignItems: 'center', justifyContent: 'center', marginBottom: 20, borderWidth: 2, borderColor: 'rgba(20,184,166,0.3)' },
-  logoIcon:    { fontSize: 48 },
-  appName:     { fontSize: 32, fontWeight: '800', color: C.white, letterSpacing: 0.5 },
+  appName:     { fontSize: 32, fontWeight: '800', color: C.white, letterSpacing: 0.5, textAlign: 'center' },
   appTagline:  { fontSize: 14, color: C.lightGray, marginTop: 6, letterSpacing: 1 },
   roleButtons: { gap: 14, marginBottom: 40 },
-  roleBtnFaculty: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.teal, borderRadius: 18, paddingVertical: 20, paddingHorizontal: 20, gap: 16, elevation: 6, shadowColor: C.teal, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 10 },
-  roleBtnStudent: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.purpleDark, borderRadius: 18, paddingVertical: 20, paddingHorizontal: 20, gap: 16, elevation: 6, shadowColor: C.purpleDark, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 10 },
-  roleBtnIcon:    { fontSize: 32 },
-  roleBtnTitle:   { fontSize: 18, fontWeight: '700', color: C.white },
-  roleBtnSub:     { fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
-  footerText:     { textAlign: 'center', fontSize: 12, color: C.midGray },
+  roleBtnFaculty: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.teal, borderRadius: 18, paddingVertical: 20, paddingHorizontal: 20, gap: 16, elevation: 6, shadowColor: C.teal, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 10, justifyContent: 'center' },
+  roleBtnStudent: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.purpleDark, borderRadius: 18, paddingVertical: 20, paddingHorizontal: 20, gap: 16, elevation: 6, shadowColor: C.purpleDark, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 10, justifyContent: 'center' },
+  roleBtnTitle:   { fontSize: 18, fontWeight: '700', color: C.white, textAlign: 'center' },
+  roleBtnSub:     { fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 2, textAlign: 'center' },
 });
