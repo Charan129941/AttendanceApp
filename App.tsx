@@ -5,6 +5,7 @@ import {
   StatusBar, Animated, Dimensions,
 } from 'react-native';
 import { BLEBroadcaster, bleEmitter } from './src/NativeModules';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 
@@ -49,6 +50,7 @@ export default function App() {
   const [studentId, setStudentId] = useState('');
   const [studentPin, setStudentPin] = useState('');
   const [hasAttempted, setHasAttempted] = useState(false);
+  const [usedPins, setUsedPins] = useState<string[]>([]);
 
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -61,6 +63,18 @@ export default function App() {
       Animated.timing(slideAnim, { toValue: 0, duration: 600, useNativeDriver: true }),
     ]).start();
   }, [mode]);
+
+  // Load persisted used PINs from device storage on app start
+  useEffect(() => {
+    AsyncStorage.getItem('usedPins').then(data => {
+      if (data) {
+        try {
+          const pins = JSON.parse(data);
+          if (Array.isArray(pins)) setUsedPins(pins);
+        } catch {}
+      }
+    });
+  }, []);
 
   useEffect(() => {
     if (isClassActive) {
@@ -170,7 +184,7 @@ export default function App() {
     }
   };
 
-  const startStudentSession = () => {
+  const startStudentSession = async () => {
     if (hasAttempted) {
       Alert.alert("Notice", "only one chance to attempt the attendance");
       return;
@@ -183,6 +197,14 @@ export default function App() {
       Alert.alert("Required", "Please enter the 4-digit PIN shown on the board.");
       return;
     }
+
+    // Check if this PIN was already used on this device (survives app restart)
+    if (usedPins.includes(studentPin)) {
+      Alert.alert("Notice", "only one chance to attempt the attendance");
+      setHasAttempted(true);
+      setStudentStatus('You have already marked attendance with this PIN.');
+      return;
+    }
     
     if (studentStatus.includes("Broadcasting")) {
       return;
@@ -191,9 +213,15 @@ export default function App() {
     setStudentStatus("Broadcasting attendance...");
     
     BLEBroadcaster.startBroadcasting(studentId, studentPin)
-      .then(() => {
+      .then(async () => {
         setStudentStatus('Broadcasting attendance successfully! You can close the app.');
         setHasAttempted(true);
+        // Persist the used PIN to device storage so it survives app restart
+        const updatedPins = [...usedPins, studentPin];
+        setUsedPins(updatedPins);
+        try {
+          await AsyncStorage.setItem('usedPins', JSON.stringify(updatedPins));
+        } catch {}
       })
       .catch(e => {
         console.error("BLE Error", e);
