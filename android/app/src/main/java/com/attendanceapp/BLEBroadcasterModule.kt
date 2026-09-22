@@ -404,20 +404,33 @@ class BLEBroadcasterModule(reactContext: ReactApplicationContext) :
         promise.resolve(null)
     }
 
-    /**
-     * Processes a single BLE scan result: extracts the manufacturer payload,
-     * decodes it, de-duplicates by studentId, and emits the event.
-     */
     private fun handleScanResult(result: ScanResult) {
         val scanRecord = result.scanRecord ?: return
-        val manufacturerData = scanRecord.getManufacturerSpecificData(COMPANY_ID) ?: return
+        var payload: ByteArray? = null
 
-        // Wait, Android sometimes pads the data. As long as we have our 24 bytes, we are good.
-        if (manufacturerData.size < PAYLOAD_SIZE) {
+        // 1. Try Manufacturer Data (Android Broadcasters)
+        val manufacturerData = scanRecord.getManufacturerSpecificData(COMPANY_ID)
+        if (manufacturerData != null && manufacturerData.size >= PAYLOAD_SIZE) {
+            payload = manufacturerData
+        } 
+        // 2. Try Service UUID (iOS Broadcasters workaround)
+        else if (scanRecord.serviceUuids != null) {
+            for (uuid in scanRecord.serviceUuids) {
+                val uuidBytes = getBytesFromUuid(uuid.uuid)
+                // Check if it matches our prefix (first 4 bytes = 0x0000FFFF)
+                if (uuidBytes[0] == 0x00.toByte() && uuidBytes[1] == 0x00.toByte() &&
+                    uuidBytes[2] == 0xFF.toByte() && uuidBytes[3] == 0xFF.toByte()) {
+                    payload = uuidBytes.copyOfRange(4, 16)
+                    break
+                }
+            }
+        }
+
+        if (payload == null || payload.size < PAYLOAD_SIZE) {
             return
         }
 
-        val decoded = decodePayload(manufacturerData) ?: return
+        val decoded = decodePayload(payload) ?: return
 
         val studentId = decoded.getString("studentId") ?: return
 
@@ -437,6 +450,13 @@ class BLEBroadcasterModule(reactContext: ReactApplicationContext) :
         reactApplicationContext
             .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
             .emit(EVENT_ATTENDANCE_RECEIVED, decoded)
+    }
+
+    private fun getBytesFromUuid(uuid: java.util.UUID): ByteArray {
+        val buffer = ByteBuffer.allocate(16)
+        buffer.putLong(uuid.mostSignificantBits)
+        buffer.putLong(uuid.leastSignificantBits)
+        return buffer.array()
     }
 
     // ─────────────────────────────────────────────────────────────────

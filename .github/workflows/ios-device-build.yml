@@ -1,0 +1,58 @@
+name: Build iOS Device IPA
+
+on:
+  workflow_dispatch: # Allows you to manually trigger the build from GitHub's Actions tab
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build Unsigned IPA
+    runs-on: macos-14 # Use Apple Silicon Mac for faster builds
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          pod install
+
+      - name: Build Unsigned iOS App
+        run: |
+          # Build the app for physical iPhones (iphoneos) and completely disable Apple code signing requirements
+          xcodebuild -workspace ios/AttendanceApp.xcworkspace \
+            -scheme AttendanceApp \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath ios/build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            ENTITLEMENTS_REQUIRED=NO
+
+      - name: Package into IPA
+        run: |
+          # An .ipa file is literally just a zip file containing a folder named "Payload" which holds the .app
+          mkdir -p Payload
+          # Move the compiled app into the Payload folder
+          mv ios/build/Build/Products/Release-iphoneos/AttendanceApp.app Payload/
+          # Zip it up as an .ipa file
+          zip -r AttendanceApp-Device.ipa Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AttendanceApp-Device-IPA
+          path: AttendanceApp-Device.ipa
+          retention-days: 7
