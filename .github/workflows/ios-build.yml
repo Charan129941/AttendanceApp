@@ -10,7 +10,7 @@ on:
 jobs:
   build-ios:
     name: Build iOS Simulator App
-    runs-on: macos-latest
+    runs-on: macos-15
     permissions:
       contents: write
 

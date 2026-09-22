@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     name: Build Unsigned IPA
-    runs-on: macos-14 # Use Apple Silicon Mac for faster builds
+    runs-on: macos-15 # Use macOS 15 to get Xcode 16.1+
     
     steps:
       - name: Checkout Repository
