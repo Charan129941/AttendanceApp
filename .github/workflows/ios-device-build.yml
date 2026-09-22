@@ -33,16 +33,15 @@ jobs:
           # Ensure Xcode's internal React Native script can find Node.js in the GitHub Action
           export NODE_BINARY=$(which node)
           
-          # Build the app for physical iPhones
+          # Build the app for physical iPhones using Ad-Hoc signing so CocoaPods embeds frameworks
           xcodebuild -workspace ios/AttendanceApp.xcworkspace \
             -scheme AttendanceApp \
             -configuration Release \
             -sdk iphoneos \
             -derivedDataPath ios/build \
-            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" \
-            ENTITLEMENTS_REQUIRED=NO
+            CODE_SIGNING_ALLOWED=YES
 
       - name: Package into IPA
         run: |
