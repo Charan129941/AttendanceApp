@@ -387,7 +387,7 @@ export default function App() {
             </Text>
             <TextInput
               style={[s.inputField, registeredStudentId ? s.inputFieldDisabled : null]}
-              placeholder="e.g. 924*0118***"
+              placeholder="924*0118***"
               placeholderTextColor={C.midGray}
               keyboardType="number-pad"
               value={studentId}
