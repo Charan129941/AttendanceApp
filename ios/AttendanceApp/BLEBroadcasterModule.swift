@@ -15,6 +15,10 @@ class BLEBroadcasterModule: RCTEventEmitter, CBPeripheralManagerDelegate, CBCent
     // Set to avoid emitting duplicate attendances in the same session
     private var seenStudents = Set<String>()
     
+    override init() {
+        super.init()
+    }
+    
     override static func requiresMainQueueSetup() -> Bool {
         return true
     }
@@ -38,12 +42,12 @@ class BLEBroadcasterModule: RCTEventEmitter, CBPeripheralManagerDelegate, CBCent
         var bePin = pinInt.bigEndian
         
         var payload = Data()
-        payload.append(withUnsafeBytes(of: &beStudentId) { Data($0) })
-        payload.append(withUnsafeBytes(of: &bePin) { Data($0) })
+        withUnsafePointer(to: &beStudentId) { payload.append(UnsafeBufferPointer(start: $0, count: 1)) }
+        withUnsafePointer(to: &bePin) { payload.append(UnsafeBufferPointer(start: $0, count: 1)) }
         
         // iOS workaround: Embed the 12-byte payload into a 16-byte Service UUID
         // Prefix with 0x0000FFFF
-        var prefix: [UInt8] = [0x00, 0x00, 0xFF, 0xFF]
+        let prefix: [UInt8] = [0x00, 0x00, 0xFF, 0xFF]
         var uuidData = Data(prefix)
         uuidData.append(payload)
         
@@ -130,9 +134,6 @@ class BLEBroadcasterModule: RCTEventEmitter, CBPeripheralManagerDelegate, CBCent
         
         // 1. Try to read from Manufacturer Data (Android Broadcasters)
         if let manufacturerData = advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data {
-            // Apple strips the Company ID from the Data object, but wait, usually Apple parses it out.
-            // Actually, CBAdvertisementDataManufacturerDataKey contains the Company ID (2 bytes) + Payload.
-            // Our COMPANY_ID is 0xFFFF.
             if manufacturerData.count >= 14 { // 2 bytes ID + 12 bytes payload
                 let companyIdBytes = [UInt8](manufacturerData.prefix(2))
                 if companyIdBytes[0] == 0xFF && companyIdBytes[1] == 0xFF {
@@ -159,9 +160,14 @@ class BLEBroadcasterModule: RCTEventEmitter, CBPeripheralManagerDelegate, CBCent
         
         guard let validPayload = payload, validPayload.count == 12 else { return }
         
-        // Decode payload
-        let studentIdRaw = validPayload.subdata(in: 0..<8).withUnsafeBytes { $0.load(as: UInt64.self) }
-        let studentId = Int64(bitPattern: UInt64(bigEndian: studentIdRaw))
+        // Decode payload safely using arrays
+        let bytes = [UInt8](validPayload)
+        
+        var studentIdRaw: UInt64 = 0
+        for i in 0..<8 {
+            studentIdRaw = (studentIdRaw << 8) | UInt64(bytes[i])
+        }
+        let studentId = Int64(bitPattern: studentIdRaw)
         let studentIdStr = String(studentId)
         
         if seenStudents.contains(studentIdStr) {
@@ -169,8 +175,11 @@ class BLEBroadcasterModule: RCTEventEmitter, CBPeripheralManagerDelegate, CBCent
         }
         seenStudents.insert(studentIdStr)
         
-        let pinRaw = validPayload.subdata(in: 8..<12).withUnsafeBytes { $0.load(as: UInt32.self) }
-        let pin = Int32(bitPattern: UInt32(bigEndian: pinRaw))
+        var pinRaw: UInt32 = 0
+        for i in 8..<12 {
+            pinRaw = (pinRaw << 8) | UInt32(bytes[i])
+        }
+        let pin = Int32(bitPattern: pinRaw)
         let pinStr = String(pin)
         
         self.sendEvent(withName: "onAttendanceReceived", body: [
