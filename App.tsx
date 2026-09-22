@@ -51,6 +51,7 @@ export default function App() {
   const [studentPin, setStudentPin] = useState('');
   const [hasAttempted, setHasAttempted] = useState(false);
   const [usedPins, setUsedPins] = useState<string[]>([]);
+  const [registeredStudentId, setRegisteredStudentId] = useState<string | null>(null);
 
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -64,7 +65,7 @@ export default function App() {
     ]).start();
   }, [mode]);
 
-  // Load persisted used PINs from device storage on app start
+  // Load persisted data from device storage on app start
   useEffect(() => {
     AsyncStorage.getItem('usedPins').then(data => {
       if (data) {
@@ -72,6 +73,14 @@ export default function App() {
           const pins = JSON.parse(data);
           if (Array.isArray(pins)) setUsedPins(pins);
         } catch {}
+      }
+    });
+    
+    // Load registered student ID (locks the device to one student)
+    AsyncStorage.getItem('registeredStudentId').then(data => {
+      if (data) {
+        setRegisteredStudentId(data);
+        setStudentId(data); // Pre-fill it
       }
     });
   }, []);
@@ -219,8 +228,13 @@ export default function App() {
         // Persist the used PIN to device storage so it survives app restart
         const updatedPins = [...usedPins, studentPin];
         setUsedPins(updatedPins);
+        
+        // Permanently lock this device to this student ID
+        setRegisteredStudentId(studentId);
+
         try {
           await AsyncStorage.setItem('usedPins', JSON.stringify(updatedPins));
+          await AsyncStorage.setItem('registeredStudentId', studentId);
         } catch {}
       })
       .catch(e => {
@@ -368,15 +382,17 @@ export default function App() {
 
           {/* Inputs */}
           <View style={s.inputGroup}>
-            <Text style={s.inputLabel}>Enrollment Number</Text>
+            <Text style={s.inputLabel}>
+              Enrollment Number {registeredStudentId ? '(Locked to Device)' : ''}
+            </Text>
             <TextInput
-              style={s.inputField}
+              style={[s.inputField, registeredStudentId ? s.inputFieldDisabled : null]}
               placeholder="e.g. 924*0118***"
               placeholderTextColor={C.midGray}
               keyboardType="number-pad"
               value={studentId}
               onChangeText={setStudentId}
-              editable={!hasAttempted}
+              editable={!registeredStudentId && !hasAttempted}
             />
           </View>
 
@@ -539,6 +555,7 @@ const s = StyleSheet.create({
   inputGroup: { marginBottom: 18 },
   inputLabel: { fontSize: 14, fontWeight: '600', color: C.lightGray, marginBottom: 8, letterSpacing: 0.2 },
   inputField: { backgroundColor: C.inputBg, borderRadius: 14, borderWidth: 1.5, borderColor: C.inputBorder, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: C.white, elevation: 1 },
+  inputFieldDisabled: { backgroundColor: '#111827', color: C.midGray, borderColor: '#1f2937' },
 
   // ── Status Box ────────────────────────────────────────────────
   statusBox:          { borderRadius: 12, padding: 14, marginBottom: 12, backgroundColor: C.inputBg, borderWidth: 1, borderColor: C.inputBorder },
