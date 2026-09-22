@@ -1,7 +1,7 @@
 import Foundation
 import CoreBluetooth
 
-@objc(BLEBroadcasterModule)
+@objc(BLEBroadcaster)
 class BLEBroadcasterModule: RCTEventEmitter, CBPeripheralManagerDelegate, CBCentralManagerDelegate {
 
     private var peripheralManager: CBPeripheralManager?
