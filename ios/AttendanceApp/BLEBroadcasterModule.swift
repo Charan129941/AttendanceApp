@@ -38,8 +38,8 @@ class BLEBroadcasterModule: RCTEventEmitter, CBPeripheralManagerDelegate, CBCent
         var bePin = pinInt.bigEndian
         
         var payload = Data()
-        payload.append(Data(bytes: &beStudentId, count: 8))
-        payload.append(Data(bytes: &bePin, count: 4))
+        payload.append(withUnsafeBytes(of: &beStudentId) { Data($0) })
+        payload.append(withUnsafeBytes(of: &bePin) { Data($0) })
         
         // iOS workaround: Embed the 12-byte payload into a 16-byte Service UUID
         // Prefix with 0x0000FFFF
@@ -160,10 +160,7 @@ class BLEBroadcasterModule: RCTEventEmitter, CBPeripheralManagerDelegate, CBCent
         guard let validPayload = payload, validPayload.count == 12 else { return }
         
         // Decode payload
-        var studentIdRaw: UInt64 = 0
-        _ = withUnsafeMutableBytes(of: &studentIdRaw) { dest in
-            validPayload.copyBytes(to: dest, from: 0..<8)
-        }
+        let studentIdRaw = validPayload.subdata(in: 0..<8).withUnsafeBytes { $0.load(as: UInt64.self) }
         let studentId = Int64(bitPattern: UInt64(bigEndian: studentIdRaw))
         let studentIdStr = String(studentId)
         
@@ -172,10 +169,7 @@ class BLEBroadcasterModule: RCTEventEmitter, CBPeripheralManagerDelegate, CBCent
         }
         seenStudents.insert(studentIdStr)
         
-        var pinRaw: UInt32 = 0
-        _ = withUnsafeMutableBytes(of: &pinRaw) { dest in
-            validPayload.copyBytes(to: dest, from: 8..<12)
-        }
+        let pinRaw = validPayload.subdata(in: 8..<12).withUnsafeBytes { $0.load(as: UInt32.self) }
         let pin = Int32(bitPattern: UInt32(bigEndian: pinRaw))
         let pinStr = String(pin)
         
