@@ -28,20 +28,27 @@ jobs:
           cd ios
           pod install
 
+      - name: Force CocoaPods to Embed Frameworks
+        run: |
+          # CocoaPods normally refuses to embed dynamic frameworks (like Hermes) if code signing is disabled.
+          # We manually patch the CocoaPods script to bypass this restriction.
+          find ios/Pods/Target\ Support\ Files -name "*-frameworks.sh" -exec sed -i '' 's/if \[ "$CODE_SIGNING_ALLOWED" == "NO" \]; then/if false; then/g' {} +
+
       - name: Build Unsigned iOS App
         run: |
           # Ensure Xcode's internal React Native script can find Node.js in the GitHub Action
           export NODE_BINARY=$(which node)
           
-          # Build the app for physical iPhones using Ad-Hoc signing so CocoaPods embeds frameworks
+          # Build the app for physical iPhones
           xcodebuild -workspace ios/AttendanceApp.xcworkspace \
             -scheme AttendanceApp \
             -configuration Release \
             -sdk iphoneos \
             -derivedDataPath ios/build \
-            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=YES
+            CODE_SIGN_IDENTITY="" \
+            ENTITLEMENTS_REQUIRED=NO
 
       - name: Package into IPA
         run: |
