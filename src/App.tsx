@@ -4,7 +4,7 @@ import {
   TextInput, ScrollView, PermissionsAndroid, Platform, Share,
   StatusBar, Animated, Dimensions,
 } from 'react-native';
-import { BLEBroadcaster, bleEmitter } from './src/NativeModules';
+import { BLEBroadcaster, bleEmitter } from './NativeModules';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
